@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lana &amp; Lino</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <!-- ===================== HEADER ===================== -->
+  <header class="header" id="header">
+    <div class="header__inner">
+      <a href="#/" class="brand">Lana&nbsp;&amp;&nbsp;Lino</a>
+      <div class="header__nav">
+        <button class="icon-btn menu-cat" id="btnCategorias" aria-haspopup="true">
+          <span class="i">▾</span> Productos
+          <div class="dropdown" id="dropdownCategorias" role="menu"></div>
+        </button>
+      </div>
+      <form class="buscador" id="formBuscar" role="search">
+        <input type="search" id="inputBuscar" placeholder="Buscar productos..." autocomplete="off" />
+        <button type="submit" class="icon-btn" aria-label="Buscar"><i data-lucide="search" class="icon"></i></button>
+      </form>
+      <nav class="header__right" id="headerActions"></nav>
+    </div>
+  </header>
+
+  <!-- ===================== CONTENIDO ===================== -->
+  <main class="main" id="app"><!-- vistas renderizadas por app.js --></main>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="footer">
+    <div class="footer__col">
+      <h4>Lana &amp; Lino</h4>
+      <p>Indumentaria online. Calidad y estilo para todos los dias.</p>
+    </div>
+    <div class="footer__col">
+      <h4>Contacto</h4>
+      <p>✉ contacto@lanaylino.com</p>
+      <p>📱 WhatsApp: +54 11 3333-4444</p>
+      <p>☎ Tel: (011) 4444-5555</p>
+    </div>
+    <div class="footer__col">
+      <h4>Redes</h4>
+      <p>Instagram: @lanaylino</p>
+      <p>Facebook: /lanaylino</p>
+      <p>TikTok: @lanaylino</p>
+    </div>
+    <div class="footer__col">
+      <h4>Desarrollado por</h4>
+      <p>Programacion II - 2026</p>
+      <p>Tomas Ferreyra</p>
+      <p>Facundo Bustamante</p>
+    </div>
+  </footer>
+
+  <!-- ===================== TOAST ===================== -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- scripts (orden importa) -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
