@@ -13,10 +13,10 @@ INSERT INTO `usuario` (`nombre`, `apellido`, `email`, `password`, `direccion`, `
 
 -- 3. Insertar Productos (Asociados a las categorías creadas)
 INSERT INTO `producto` (`nombre`, `descripcion`, `precio`, `genero`, `id_categoria`, `imagen`) VALUES
-('Remera Basica Algodon', 'Remera 100% algodon peinado de alta calidad', 15000.00, 'Unisex', 1, 'remera_basica.jpg'),
-('Pantalon Cargo', 'Pantalon cargo con multiples bolsillos reforzados', 35000.00, 'Hombre', 2, 'cargo_negro.jpg'),
-('Buzo Canguro Lino', 'Buzo de medio tiempo ideal para la noche', 45000.00, 'Mujer', 3, 'buzo_lino.jpg'),
-('Gorra Urbana', 'Gorra con ajuste regulable', 12000.00, 'Unisex', 4, 'gorra_urbana.jpg');
+('Remera Basica Algodon', 'Remera 100% algodon peinado de alta calidad', 15000.00, 'Unisex', 1, 'images/remera_basica.jpg'),
+('Pantalon Cargo', 'Pantalon cargo con multiples bolsillos reforzados', 35000.00, 'Hombre', 2, 'images/cargo_negro.jpg'),
+('Buzo Canguro Lino', 'Buzo de medio tiempo ideal para la noche', 45000.00, 'Mujer', 3, 'images/buzo_lino.jpg'),
+('Gorra Urbana', 'Gorra con ajuste regulable', 12000.00, 'Unisex', 4, 'images/gorra_urbana.jpg');
 
 -- 4. Insertar Inventario (Asociado a los productos)
 INSERT INTO `inventario` (`talle`, `color`, `stock`, `id_producto`) VALUES
