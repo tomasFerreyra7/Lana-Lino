@@ -113,15 +113,16 @@ function verificarToken(req){
         return {estado: false, error: "Token no proporcionado"}
     }
     try{
-        const payload = jwt.verify(token, secret);
-        if(Date.now() > payload.exp){
-            return {estado: false, error: "Token expirado"}
-        }
+        // jwt.verify ya valida la expiracion (claim exp en segundos) y lanza si vencio
+        jwt.verify(token, secret);
         return {estado: true};
     }
     catch(error){
+        if(error.name === "TokenExpiredError"){
+            return {estado: false, error: "Token expirado"}
+        }
         return {estado: false, error: "Token inválido"}
-    }  
+    }
 
 }
 

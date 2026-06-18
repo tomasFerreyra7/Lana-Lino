@@ -173,9 +173,13 @@
       const fav = card.querySelector('.card__fav');
       fav.addEventListener('click', async () => {
         if (!Estado.estaLogueado()) { toast('Inicia sesion para usar favoritos'); return goto('#/login'); }
-        const r = await DB.toggleFavorito(Estado.getUsuario().id_usuario, id);
-        fav.classList.toggle('activo', r.activo);
-        toast(r.activo ? 'Agregado a favoritos' : 'Quitado de favoritos');
+        try {
+          const r = await DB.toggleFavorito(Estado.getUsuario().id_usuario, id);
+          fav.classList.toggle('activo', r.activo);
+          toast(r.activo ? 'Agregado a favoritos' : 'Quitado de favoritos');
+        } catch (err) {
+          toast(err.message || 'Error al actualizar favoritos');
+        }
       });
     });
   }
@@ -306,25 +310,32 @@
 
     document.getElementById('selCuotas').onchange = (e) => { sel.cuotas = Number(e.target.value); refrescarCuotas(); };
 
-    document.getElementById('btnAgregar').onclick = () => {
+    document.getElementById('btnAgregar').onclick = async () => {
       if (!Estado.estaLogueado()) { toast('Inicia sesion para comprar'); return goto('#/login'); }
       const v = varianteActual();
       if (!v || v.stock <= 0) return;
-      Estado.agregarAlCarrito({
+      const item = {
         id_producto: p.id_producto, nombre: p.nombre, precio: p.precio, imagen: p.imagen,
         talle: sel.talle, color: sel.color, cantidad: 1, id_inventario: v.id_inventario,
-      });
+      };
+      Estado.agregarAlCarrito(item);
       toast('Producto agregado al carrito');
+      const usuario = Estado.getUsuario();
+      DB.agregarACarrito(usuario.id_usuario, v.id_inventario).catch(() => {});
     };
 
     document.getElementById('btnFav').onclick = async () => {
       if (!Estado.estaLogueado()) { toast('Inicia sesion para usar favoritos'); return goto('#/login'); }
-      const r = await DB.toggleFavorito(Estado.getUsuario().id_usuario, p.id_producto);
-      const btn = document.getElementById('btnFav');
-      btn.classList.toggle('activo', r.activo);
-      btn.innerHTML = `${ic('heart')} ${r.activo ? 'En favoritos' : 'Favorito'}`;
-      icons();
-      toast(r.activo ? 'Agregado a favoritos' : 'Quitado de favoritos');
+      try {
+        const r = await DB.toggleFavorito(Estado.getUsuario().id_usuario, p.id_producto);
+        const btn = document.getElementById('btnFav');
+        btn.classList.toggle('activo', r.activo);
+        btn.innerHTML = `${ic('heart')} ${r.activo ? 'En favoritos' : 'Favorito'}`;
+        icons();
+        toast(r.activo ? 'Agregado a favoritos' : 'Quitado de favoritos');
+      } catch (err) {
+        toast(err.message || 'Error al actualizar favoritos');
+      }
     };
 
     refrescarStock();
@@ -363,8 +374,12 @@
     });
     document.querySelectorAll('[data-del]').forEach((b) => {
       b.addEventListener('click', async () => {
-        await DB.toggleFavorito(Estado.getUsuario().id_usuario, b.dataset.del);
-        toast('Quitado de favoritos'); vistaFavoritos();
+        try {
+          await DB.quitarFavorito(Estado.getUsuario().id_usuario, b.dataset.del);
+          toast('Quitado de favoritos'); vistaFavoritos();
+        } catch {
+          toast('Error al quitar favorito');
+        }
       });
     });
   }
@@ -372,15 +387,27 @@
   /* =============================================================
      VISTA: Carrito
      ============================================================= */
-  function vistaCarrito() {
-    const carrito = Estado.getCarrito();
+  async function vistaCarrito() {
+    if (!Estado.estaLogueado()) { return requiereLogin('Inicia sesion para ver tu carrito'); }
+    $app.innerHTML = loader();
+    const usuario = Estado.getUsuario();
+    let carrito;
+    try {
+      carrito = await DB.getCarritoBackend(usuario.id_usuario);
+    } catch {
+      carrito = Estado.getCarrito();
+    }
+    Estado.setCarrito(carrito);
+
     if (!carrito.length) { $app.innerHTML = vacio('Tu carrito esta vacio', 'shopping-bag'); icons(); return; }
+
+    const total = carrito.reduce((s, it) => s + it.precio * it.cantidad, 0);
 
     $app.innerHTML = `
       <h2 class="page-title">Carrito</h2>
-      <p class="page-sub">${Estado.cantidadCarrito()} artículo(s).</p>
+      <p class="page-sub">${carrito.length} artículo(s).</p>
       <div class="lista">
-        ${carrito.map((it, i) => `
+        ${carrito.map((it) => `
           <div class="item">
             <img src="${esc(it.imagen)}" alt="${esc(it.nombre)}" />
             <div class="item__meta">
@@ -388,28 +415,48 @@
               <small>Talle ${esc(it.talle)} · ${esc(it.color)} · x${it.cantidad}</small>
             </div>
             <span class="item__price">${money(it.precio * it.cantidad)}</span>
-            <button class="btn btn--danger btn--sm" data-i="${i}">Eliminar</button>
+            <button class="btn btn--danger btn--sm" data-inv="${it.id_inventario}">Eliminar</button>
           </div>`).join('')}
       </div>
       <div class="resumen">
-        <div class="linea total"><span>Total</span><span>${money(Estado.totalCarrito())}</span></div>
+        <div class="linea total"><span>Total</span><span>${money(total)}</span></div>
         <a class="btn btn--block" href="#/pago">Pagar</a>
         <button class="btn btn--ghost btn--block" id="vaciar">Vaciar carrito</button>
       </div>`;
 
-    document.querySelectorAll('[data-i]').forEach((b) => {
-      b.onclick = () => { Estado.quitarDelCarrito(Number(b.dataset.i)); toast('Producto eliminado'); vistaCarrito(); };
+    document.querySelectorAll('[data-inv]').forEach((b) => {
+      b.onclick = async () => {
+        try { await DB.eliminarDeCarrito(usuario.id_usuario, b.dataset.inv); } catch {}
+        const c = Estado.getCarrito().filter((it) => String(it.id_inventario) !== b.dataset.inv);
+        Estado.setCarrito(c);
+        toast('Producto eliminado'); vistaCarrito();
+      };
     });
-    document.getElementById('vaciar').onclick = () => { Estado.vaciarCarrito(); vistaCarrito(); };
+    document.getElementById('vaciar').onclick = async () => {
+      try { await Promise.all(carrito.map((it) => DB.eliminarDeCarrito(usuario.id_usuario, it.id_inventario))); } catch {}
+      Estado.vaciarCarrito();
+      vistaCarrito();
+    };
   }
 
   /* =============================================================
      VISTA: Pago
      ============================================================= */
-  function vistaPago() {
+  async function vistaPago() {
     if (!Estado.estaLogueado()) return requiereLogin('Inicia sesion para pagar');
-    const carrito = Estado.getCarrito();
+    $app.innerHTML = loader();
+    const usuario = Estado.getUsuario();
+    let carrito;
+    try {
+      carrito = await DB.getCarritoBackend(usuario.id_usuario);
+    } catch {
+      carrito = Estado.getCarrito();
+    }
+    Estado.setCarrito(carrito);
+
     if (!carrito.length) { $app.innerHTML = vacio('No hay productos para pagar', 'shopping-bag'); icons(); return; }
+
+    const total = carrito.reduce((s, it) => s + it.precio * it.cantidad, 0);
 
     $app.innerHTML = `
       <h2 class="page-title">Pago</h2>
@@ -424,7 +471,7 @@
               </div>`).join('')}
           </div>
           <div class="resumen" style="margin:14px 0 0">
-            <div class="linea total"><span>Total</span><span>${money(Estado.totalCarrito())}</span></div>
+            <div class="linea total"><span>Total</span><span>${money(total)}</span></div>
           </div>
         </div>
 
@@ -447,7 +494,7 @@
               </div>
             </div>
             <div class="form-error" id="pagoError"></div>
-            <button class="btn btn--block" id="btnPagar" type="submit" disabled>Pagar ${money(Estado.totalCarrito())}</button>
+            <button class="btn btn--block" id="btnPagar" type="submit" disabled>Pagar ${money(total)}</button>
           </form>
           <div id="pagoOk"></div>
         </div>
@@ -482,7 +529,7 @@
     document.getElementById('formPago').onsubmit = async (e) => {
       e.preventDefault();
       if (btn.disabled) return;
-      await DB.crearPedido(Estado.getUsuario().id_usuario, Estado.getCarrito(), metodo.value);
+      try { await Promise.all(carrito.map((it) => DB.eliminarDeCarrito(usuario.id_usuario, it.id_inventario))); } catch {}
       Estado.vaciarCarrito();
       document.getElementById('formPago').style.display = 'none';
       document.getElementById('pagoOk').innerHTML = `

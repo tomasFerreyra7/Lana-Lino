@@ -14,9 +14,7 @@ router.post("/crearInventario",productoController.crearInventario)
 router.post("/agregarFavorito",productoController.agregarFavorito)
 router.get("/obtenerFavoritos/:id",productoController.obtenerFavoritos);
 router.delete("/eliminarFavorito",productoController.eliminarFavorito);
-router.post("/agregarFavorito",productoController.agregarFavorito)
 router.post("/agregarACarrito",productoController.agregarACarrito)
-router.get("/obtenerFavoritos/:id",productoController.obtenerFavoritos);
 router.delete("/eliminarProductoCarrito",productoController.eliminarProductoCarrito);
 router.get("/obtenerProductosCarrito/:id",productoController.obtenerProductosCarrito);
 

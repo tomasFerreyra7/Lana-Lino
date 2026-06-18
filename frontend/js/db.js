@@ -185,16 +185,18 @@
       const ids = await idsFavoritos(id_usuario);
       const esFav = ids.includes(Number(id_producto));
       if (esFav) {
-        await req('/eliminarFavorito', {
+        const r = await req('/eliminarFavorito', {
           method: 'DELETE', auth: true,
           body: { id_usuario: Number(id_usuario), id_producto: Number(id_producto) },
         });
+        if (r && r.codigo !== undefined && r.codigo !== 200) throw new Error(r.mensaje || 'No se pudo quitar de favoritos');
         return { activo: false };
       } else {
-        await req('/agregarFavorito', {
+        const r = await req('/agregarFavorito', {
           method: 'POST', auth: true,
           body: { id_producto: Number(id_producto), id_usuario: Number(id_usuario) },
         });
+        if (r && r.codigo !== undefined && r.codigo !== 200) throw new Error(r.mensaje || 'No se pudo agregar a favoritos');
         return { activo: true };
       }
     },
@@ -202,6 +204,13 @@
     async esFavorito(id_usuario, id_producto) {
       const ids = await idsFavoritos(id_usuario);
       return ids.includes(Number(id_producto));
+    },
+
+    async quitarFavorito(id_usuario, id_producto) {
+      return req('/eliminarFavorito', {
+        method: 'DELETE', auth: true,
+        body: { id_usuario: Number(id_usuario), id_producto: Number(id_producto) },
+      });
     },
 
     /* ----- admin: productos ----- */
@@ -234,6 +243,44 @@
       });
       invalidar();
       return r;
+    },
+
+    async agregarACarrito(id_usuario, id_inventario) {
+      return req('/agregarACarrito', {
+        method: 'POST', auth: true,
+        body: { id_inventario: Number(id_inventario), id_usuario: Number(id_usuario) },
+      });
+    },
+
+    async getCarritoBackend(id_usuario) {
+      const r = await req(`/obtenerProductosCarrito/${id_usuario}`, { auth: true });
+      const rows = r.payload || [];
+      const map = new Map();
+      for (const it of rows) {
+        const key = Number(it.idInventario);
+        if (map.has(key)) {
+          map.get(key).cantidad++;
+        } else {
+          map.set(key, {
+            id_inventario: key,
+            id_producto: Number(it.idProducto),
+            nombre: it.producto,
+            precio: Number(it.precio),
+            imagen: it.urlImagen || placeholder(it.producto),
+            talle: it.talle,
+            color: it.color,
+            cantidad: 1,
+          });
+        }
+      }
+      return [...map.values()];
+    },
+
+    async eliminarDeCarrito(id_usuario, id_inventario) {
+      return req('/eliminarProductoCarrito', {
+        method: 'DELETE', auth: true,
+        body: { id_usuario: Number(id_usuario), id_inventario: Number(id_inventario) },
+      });
     },
 
     crearPedido(_id_usuario, items, _metodo_pago) {

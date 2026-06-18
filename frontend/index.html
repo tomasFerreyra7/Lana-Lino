@@ -10,17 +10,24 @@
   <!-- ===================== HEADER ===================== -->
   <header class="header" id="header">
     <div class="header__inner">
-      <a href="#/" class="brand">Lana&nbsp;&amp;&nbsp;Lino</a>
-      <div class="header__nav">
-        <button class="icon-btn menu-cat" id="btnCategorias" aria-haspopup="true">
-          <span class="i">▾</span> Productos
-          <div class="dropdown" id="dropdownCategorias" role="menu"></div>
-        </button>
+      <!-- Izquierda: categorías + buscador -->
+      <div class="header__left">
+        <div class="header__nav">
+          <button class="icon-btn menu-cat" id="btnCategorias" aria-haspopup="true">
+            <span class="i">▾</span> Productos
+            <div class="dropdown" id="dropdownCategorias" role="menu"></div>
+          </button>
+        </div>
+        <form class="buscador" id="formBuscar" role="search">
+          <input type="search" id="inputBuscar" placeholder="Buscar productos..." autocomplete="off" />
+          <button type="submit" class="icon-btn" aria-label="Buscar"><i data-lucide="search" class="icon"></i></button>
+        </form>
       </div>
-      <form class="buscador" id="formBuscar" role="search">
-        <input type="search" id="inputBuscar" placeholder="Buscar productos..." autocomplete="off" />
-        <button type="submit" class="icon-btn" aria-label="Buscar"><i data-lucide="search" class="icon"></i></button>
-      </form>
+
+      <!-- Centro: marca -->
+      <a href="#/" class="brand">Lana&nbsp;&amp;&nbsp;Lino</a>
+
+      <!-- Derecha: acciones -->
       <nav class="header__right" id="headerActions"></nav>
     </div>
   </header>
@@ -59,8 +66,8 @@
 
   <!-- scripts (orden importa) -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-  <script src="js/db.js"></script>
-  <script src="js/state.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/db.js?v=2"></script>
+  <script src="js/state.js?v=2"></script>
+  <script src="js/app.js?v=2"></script>
 </body>
 </html>

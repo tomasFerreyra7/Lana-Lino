@@ -188,10 +188,7 @@ const crearCategoria = async (req, res) => {
 
 const obtenerCategorias = async (req, res) => {
    try{
-    const resultadoVerificar = verificarToken(req);
-        if(resultadoVerificar.estado == false){
-            return res.send({codigo: -1, mensaje: resultadoVerificar.error})
-        }
+    // Categorias = dato publico de catalogo (igual que obtenerProductos): no requiere login
     const connection = await getConnection();
     const response = await connection.query("SELECT * from categoria");
     res.json({codigo: 200, mensaje: "OK", payload:  response});
@@ -216,10 +213,22 @@ const agregarFavorito = async (req, res) => {
             id_usuario
         } = req.body;
 
-        const favorito = { id_producto, id_usuario };
-
         const connection = await getConnection();
-        const response = await connection.query("INSERT INTO favorito SET ?", favorito);
+
+        // Evita duplicados: si ya es favorito, no inserta de nuevo (idempotente)
+        const existe = await connection.query(
+            "SELECT id_favorito FROM favorito WHERE id_usuario = ? AND id_producto = ?",
+            [id_usuario, id_producto]
+        );
+        if (existe.length > 0) {
+            return res.json({
+                codigo: 200,
+                mensaje: "El producto ya estaba en favoritos",
+                payload: [{ idFavorito: existe[0].id_favorito }]
+            });
+        }
+
+        const response = await connection.query("INSERT INTO favorito SET ?", { id_producto, id_usuario });
 
         if (response && response.affectedRows > 0) {
             res.json({
@@ -227,6 +236,8 @@ const agregarFavorito = async (req, res) => {
                 mensaje: "Producto añadido a favoritos",
                 payload: [{ idFavorito: response.insertId }]
             });
+        } else {
+            res.json({ codigo: -1, mensaje: "Error añadiendo producto a favoritos", payload: [] });
         }
     } catch (error) {
         res.status(500);
@@ -241,15 +252,16 @@ function verificarToken(req){
         return {estado: false, error: "Token no proporcionado"}
     }
     try{
-        const payload = jwt.verify(token, secret);
-        if(Date.now() > payload.exp){
-            return {estado: false, error: "Token expirado"}
-        }
+        // jwt.verify ya valida la expiracion (claim exp en segundos) y lanza si vencio
+        jwt.verify(token, secret);
         return {estado: true};
     }
     catch(error){
+        if(error.name === "TokenExpiredError"){
+            return {estado: false, error: "Token expirado"}
+        }
         return {estado: false, error: "Token inválido"}
-    }  
+    }
 
 }
 
